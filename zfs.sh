@@ -3,6 +3,7 @@
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$DIR/declarations/color.sh"
 source "$DIR/declarations/dialog.sh"
+source "$DIR/declarations/disk.sh"
 
 echo "╔══════════════════════════════╗"
 echo "║   Installer script for ZFS   ║"
@@ -50,9 +51,9 @@ done
 if [[ "$distro" == "opensuse-leap" ]]; then
   zypper --quiet addrepo https://download.opensuse.org/repositories/filesystems/openSUSE_Leap_${distver}/filesystems.repo
   zypper --gpg-auto-import-keys refresh
-  zypper --gpg-auto-import-keys refresh
   zypper --non-interactive update --no-recommends
   zypper --non-interactive install zfs dialog
+  /sbin/modprobe zfs
 fi
 
 while : ; do
@@ -72,3 +73,147 @@ echo "Selected disks:"
 for choice in "${empty_disks[@]}"; do
   echo -e "${GREEN}${choice}${NO_COLOR}"
 done
+
+declare -a symlinks=()
+for disk in "${empty_disks[@]}"; do
+  symlinks+=( $(disk::path_to_id ${disk}) )
+done
+
+printf '> %s\n' "${symlinks[@]}"
+
+# There's only a relatively minor space penalty if you mistakenly go with a higher ashift than needed,
+# while the penalty for having your ashift too low when needing to replace a device with a different
+# spare device is that it won't work at all and you'll have to migrate the pool.
+# My suggestion would be to use ashift=13.
+
+case ${#symlinks[@]} in
+  1)
+    zpool create -f -o ashift=12 -O mountpoint=none storage ${symlinks[0]}
+    ;;
+  2)
+    cmd=(dialog --no-cancel --clear --backtitle "2 disks zpool configuration" --menu "Select zpool RAID type" 9 95 6)
+    options=(0 "Mirror (recommended, excellent redundancy, but has low capacity and slow write speed)"
+             1 "Stripe (has no redundancy, but provides the best performance and additional storage)")
+    declare -a choices=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
+    case ${choices[0]} in
+      0)
+        zpool create -f -o ashift=13 -O mountpoint=none storage mirror ${symlinks[0]} ${symlinks[1]}
+        ;;
+      1)
+        zpool create -f -o ashift=13 -O mountpoint=none storage ${symlinks[0]} ${symlinks[1]}
+        ;;
+    esac
+    ;;
+  3)
+    cmd=(dialog --no-cancel --clear --backtitle "3 disks zpool configuration" --menu "Select zpool RAID type" 9 95 6)
+    options=(0 "RAID-Z1 (recommended for fast/small disks, good redundancy & storage efficiency combo)"
+             1 "Stripe (has no redundancy, but provides the best performance and additional storage)")
+    declare -a choices=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
+    case ${choices[0]} in
+      0)
+        zpool create -f -o ashift=13 -O mountpoint=none storage raidz ${symlinks[0]} ${symlinks[1]} ${symlinks[2]}
+        ;;
+      1)
+        zpool create -f -o ashift=13 -O mountpoint=none storage ${symlinks[0]} ${symlinks[1]} ${symlinks[2]}
+        ;;
+    esac
+    ;;
+  4)
+    cmd=(dialog --no-cancel --clear --backtitle "4 disks zpool configuration" --menu "Select zpool RAID type" 11 95 6)
+    options=(0 "Two striped mirrors (pool of mirror vdevs is the best read-performing ZFS topology)"
+             1 "RAID-Z2 (similar to №1, safer in case of any of the drives fails, but CPU intensive)"
+             2 "RAID-Z1 (only one drive out of the pool can fail, not recommended for large disks)"
+             3 "Stripe (has no redundancy, but provides the best performance and additional storage)")
+    declare -a choices=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
+    case ${choices[0]} in
+      0)
+        zpool create -f -o ashift=13 -O mountpoint=none storage mirror ${symlinks[0]} ${symlinks[1]} mirror ${symlinks[2]} ${symlinks[3]}
+        ;;
+      1)
+        zpool create -f -o ashift=13 -O mountpoint=none storage raidz2 ${symlinks[0]} ${symlinks[1]} ${symlinks[2]} ${symlinks[3]}
+        ;;
+      2)
+        zpool create -f -o ashift=13 -O mountpoint=none storage raidz ${symlinks[0]} ${symlinks[1]} ${symlinks[2]} ${symlinks[3]}
+        ;;
+      3)
+        zpool create -f -o ashift=13 -O mountpoint=none storage ${symlinks[0]} ${symlinks[1]} ${symlinks[2]} ${symlinks[3]}
+        ;;
+    esac
+    ;;
+  5)
+    cmd=(dialog --no-cancel --clear --backtitle "5 disks zpool configuration" --menu "Select zpool RAID type" 11 95 6)
+    options=(0 "RAID-Z3 (extremely durable, but could be overkill for the money)"
+             1 "RAID-Z2 (not recommended for low power CPU, can cause some performance penalty)"
+             2 "RAID-Z1 (only one drive out of the pool can fail, not recommended for large disks)"
+             3 "Stripe (has no redundancy, but provides the best performance and additional storage)")
+    declare -a choices=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
+    case ${choices[0]} in
+      0)
+        zpool create -f -o ashift=13 -O mountpoint=none storage raidz3 ${symlinks[0]} ${symlinks[1]} ${symlinks[2]} ${symlinks[3]} ${symlinks[4]}
+        ;;
+      1)
+        zpool create -f -o ashift=13 -O mountpoint=none storage raidz2 ${symlinks[0]} ${symlinks[1]} ${symlinks[2]} ${symlinks[3]} ${symlinks[4]}
+        ;;
+      2)
+        zpool create -f -o ashift=13 -O mountpoint=none storage raidz ${symlinks[0]} ${symlinks[1]} ${symlinks[2]} ${symlinks[3]} ${symlinks[4]}
+        ;;
+      3)
+        zpool create -f -o ashift=13 -O mountpoint=none storage ${symlinks[0]} ${symlinks[1]} ${symlinks[2]} ${symlinks[3]} ${symlinks[4]}
+        ;;
+    esac
+    ;;
+  6)
+    cmd=(dialog --no-cancel --clear --backtitle "6 disks zpool configuration" --menu "Select zpool RAID type" 12 95 6)
+    options=(0 "Three striped mirrors (pool of mirror vdevs is the best read-performing ZFS topology)"
+             1 "RAID-Z2 (high durability and space efficiency, but CPU intensive)"
+             2 "RAID-Z1 (only one drive out of the pool can fail, not recommended for large disks)"
+             3 "RAID-Z3 (extremely durable, but could be overkill for the money)"
+             4 "Stripe (has no redundancy, but provides the best performance and additional storage)")
+    declare -a choices=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
+    case ${choices[0]} in
+      0)
+        zpool create -f -o ashift=13 -O mountpoint=none storage mirror ${symlinks[0]} ${symlinks[1]} mirror ${symlinks[2]} ${symlinks[3]} mirror ${symlinks[4]} ${symlinks[5]}
+        ;;
+      1)
+        zpool create -f -o ashift=13 -O mountpoint=none storage raidz2 ${symlinks[0]} ${symlinks[1]} ${symlinks[2]} ${symlinks[3]} ${symlinks[4]} ${symlinks[5]}
+        ;;
+      2)
+        zpool create -f -o ashift=13 -O mountpoint=none storage raid1 ${symlinks[0]} ${symlinks[1]} ${symlinks[2]} ${symlinks[3]} ${symlinks[4]} ${symlinks[5]}
+        ;;
+      3)
+        zpool create -f -o ashift=13 -O mountpoint=none storage raidz3 ${symlinks[0]} ${symlinks[1]} ${symlinks[2]} ${symlinks[3]} ${symlinks[4]} ${symlinks[5]}
+        ;;
+      4)
+        zpool create -f -o ashift=13 -O mountpoint=none storage ${symlinks[0]} ${symlinks[1]} ${symlinks[2]} ${symlinks[3]} ${symlinks[4]} ${symlinks[5]}
+        ;;
+    esac
+    ;;
+  *)
+    cmd=(dialog --no-cancel --clear --backtitle "6+ disks zpool configuration" --menu "Select zpool RAID type" 11 95 6)
+    options=(0 "RAID-Z3 (extremely durable, but could be overkill for the money)"
+             1 "RAID-Z2 (not recommended for low power CPU, can cause some performance penalty)"
+             2 "RAID-Z1 (only one drive out of the pool can fail, not recommended for large disks)"
+             3 "Stripe (has no redundancy, but provides the best performance and additional storage)")
+    declare -a choices=$("${cmd[@]}" "${options[@]}" 2>&1 >/dev/tty)
+    declare sb=""
+    for symlink in ${symlinks[@]}; do
+      sb="${sb} ${symlink}"
+    done
+    case ${choices[0]} in
+      0)
+        zpool create -f -o ashift=13 -O mountpoint=none storage raidz3 ${sb}
+        ;;
+      1)
+        zpool create -f -o ashift=13 -O mountpoint=none storage raidz2 ${sb}
+        ;;
+      2)
+        zpool create -f -o ashift=13 -O mountpoint=none storage raidz ${sb}
+        ;;
+      3)
+        zpool create -f -o ashift=13 -O mountpoint=none storage ${sb}
+        ;;
+    esac
+    ;;
+esac
+
+

@@ -1,12 +1,18 @@
 <component name="ProjectDictionaryState">
   <dictionary name="inbonkin">
     <words>
+      <w>ashift</w>
       <w>dialog::menu</w>
       <w>dialog::multiselect</w>
+      <w>dialog::select</w>
+      <w>disk::path</w>
       <w>distver</w>
       <w>multiselect</w>
       <w>opensuse</w>
+      <w>raidz</w>
       <w>unpartitioned</w>
+      <w>vdevs</w>
+      <w>zpool</w>
     </words>
   </dictionary>
 </component>
