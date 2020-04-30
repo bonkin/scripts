@@ -52,7 +52,10 @@ if [[ "$distro" == "opensuse-leap" ]]; then
   zypper --quiet addrepo https://download.opensuse.org/repositories/filesystems/openSUSE_Leap_${distver}/filesystems.repo
   zypper --gpg-auto-import-keys refresh
   zypper --non-interactive update --no-recommends
-  zypper --non-interactive install zfs dialog
+  zypper --non-interactive install \
+                            zfs \
+                            dialog \
+                            whois # ->mkpasswd
   /sbin/modprobe zfs
 fi
 
@@ -216,4 +219,45 @@ case ${#symlinks[@]} in
     ;;
 esac
 
+while true; do
+    password1=$(dialog --no-cancel --clear --insecure --passwordbox "Enter your password" 10 30 --stdout)
+    password2=$(dialog --no-cancel --clear --insecure --passwordbox "Confirm your password" 10 30 --stdout)
+    [[ "$password1" = "$password2" ]] && break
+    echo "Passwords not match! Please try again"; sleep 2
+done
 
+mkpasswd=$(mkpasswd --rounds=540549 -m sha-512 --salt=2cE40549 -s <<< "$password1")
+password32=${mkpasswd: -31}
+echo ${password32} > /etc/enc2key
+
+zfs create \
+  -o encryption=aes-128-gcm \
+  -o keyformat=raw \
+  -o keylocation=file:///etc/enc2key \
+  -o recordsize=8K \
+  -o primarycache=metadata \
+  -o logbias=throughput \
+  -o mountpoint=/var/lib/pgsql/data \
+  -o compression=lz4 \
+  -o deduplication=off \
+  storage/encrypted
+
+cat <<EOT >> /etc/systemd/system/zfskey-load.service
+[Unit]
+Description=Load pool encryption keys
+Before=zfs-mount.service
+After=zfs-import.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/bash -c '/usr/sbin/zfs load-key -a'
+
+[Install]
+WantedBy=zfs-mount.service
+EOT
+
+systemctl enable zfskey-load.service
+
+zpool status
+zfs list -o name,used,avail,refer,encryptionroot,mountpoint,compression,compressratio -S encryptionroot

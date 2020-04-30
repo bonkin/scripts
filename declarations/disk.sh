@@ -14,7 +14,7 @@
 # Returns through argument.
 function disk::path_to_id(){
   local disk_id
-  for symlink in `ls /dev/disk/by-id`; do
+  for symlink in `ls -tr /dev/disk/by-id`; do
     disk=$(readlink -f /dev/disk/by-id/${symlink})
     if [[ "$disk" == $1 ]]; then
       disk_id=${symlink}
