@@ -48,6 +48,31 @@ for empty_disk in "${empty_disks[@]}"; do
   echo -e ${GREEN}${empty_disk}${NO_COLOR}
 done
 
+while : ; do
+  read -e -p "Select mount point directory (e.g. /var/lib/pgsql/data): " mount_point
+  if [[ ! -d ${mount_point} ]]; then
+    echo -e "Directory ${RED}$mount_point${NO_COLOR} doesn't exist!"
+  fi
+  while : ; do
+    echo -e "Does this look correct (${GREEN}y${NO_COLOR}/${RED}n${NO_COLOR}):"
+    read -i "y" -e yn
+    case ${yn} in
+      [Yy]* )
+        if [[ ! -d ${mount_point} ]]; then
+          mkdir -p ${mount_point};
+          echo -e "Directory ${GREEN}$mount_point${NO_COLOR} was created"
+        fi
+        break 2
+        ;;
+      [Nn]* )
+        break
+        ;;
+      * )
+        echo "Please answer yes or no.";;
+    esac
+  done
+done
+
 if [[ "$distro" == "opensuse-leap" ]]; then
   zypper --quiet addrepo https://download.opensuse.org/repositories/filesystems/openSUSE_Leap_${distver}/filesystems.repo
   zypper --gpg-auto-import-keys refresh
@@ -237,9 +262,8 @@ zfs create \
   -o recordsize=8K \
   -o primarycache=metadata \
   -o logbias=throughput \
-  -o mountpoint=/var/lib/pgsql/data \
+  -o mountpoint=${mount_point} \
   -o compression=lz4 \
-  -o deduplication=off \
   storage/encrypted
 
 cat <<EOT >> /etc/systemd/system/zfskey-load.service
