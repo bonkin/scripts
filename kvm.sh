@@ -57,8 +57,8 @@ cd /usr/share/vagrant-vms
 cp "$DIR/Vagrantfile" /usr/share/vagrant-vms
 
 virsh net-define "$DIR/vnet-definition.xml"
-virsh net-start vagrant-libvirt
-virsh net-autostart vagrant-libvirt
+virsh net-start node-network
+virsh net-autostart node-network
 virsh net-list
 
 systemctl restart libvirtd

@@ -1,12 +1,12 @@
 <network connections='1'>
-    <name>vagrant-libvirt</name>
+    <name>node-network</name>
     <forward mode="bridge">
         <interface dev="eth0"/>
     </forward>
     <bridge name='virbr1' stp='on' delay='0'/>
-    <ip address='192.168.121.1' netmask='255.255.255.0'>
+    <ip address='10.0.10.1' netmask='255.255.255.0'>
         <dhcp>
-            <range start='192.168.121.2' end='192.168.121.254'/>
+            <range start='10.0.10.2' end='10.0.10.254'/>
         </dhcp>
     </ip>
 </network>

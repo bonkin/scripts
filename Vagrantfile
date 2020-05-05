@@ -9,10 +9,10 @@
 
 #Net work prefix in which a single digit is appended
 #ex 192.168.1.5 will have a master at 192.168.1.50 and workers starting from 192.168.1.51
-NETWORK_PREFIX="192.168.121.9"
+NETWORK_PREFIX="10.0.10.9"
 
 #make sure libvirt, qemu, kvm etc are installed
-#make sure other hypervisers such as virtualbox are not
+#make sure other hypervisors such as virtualbox are not
 ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
 IMAGE_NAME = "peru/ubuntu-18.04-server-amd64"
 
@@ -27,6 +27,8 @@ Vagrant.configure("2") do |config|
         libvirt.cpus = 1
         libvirt.driver = "kvm"
         libvirt.nested = false
+        libvirt.management_network_name = 'node-network'
+        libvirt.management_network_address = '10.0.10.0/24'
     end
 
     config.vm.define "master-1" do |master|
