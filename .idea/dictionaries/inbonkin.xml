@@ -7,13 +7,19 @@
       <w>dialog::select</w>
       <w>disk::path</w>
       <w>distver</w>
+      <w>hypervisors</w>
+      <w>libvirt</w>
       <w>mkpasswd</w>
       <w>multiselect</w>
       <w>opensuse</w>
       <w>pgsql</w>
       <w>raidz</w>
       <w>unpartitioned</w>
+      <w>vagrantfile</w>
       <w>vdevs</w>
+      <w>virtualbox</w>
+      <w>virtualization</w>
+      <w>vnet</w>
       <w>zpool</w>
     </words>
   </dictionary>

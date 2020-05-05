@@ -5,9 +5,9 @@ source "$DIR/declarations/color.sh"
 source "$DIR/declarations/dialog.sh"
 source "$DIR/declarations/disk.sh"
 
-echo "╔══════════════════════════════╗"
-echo "║   Installer script for ZFS   ║"
-echo "╚══════════════════════════════╝"
+echo "╔═══════════════════════════════╗"
+echo "║         ZFS Installer         ║"
+echo "╚═══════════════════════════════╝"
 
 distro=$(grep -oP '(?<=^ID=).+' /etc/os-release | tr -d '"')
 distver=$(grep -oP '(?<=^VERSION_ID=).+' /etc/os-release | tr -d '"')
