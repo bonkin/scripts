@@ -1,12 +1,44 @@
-<network connections='1'>
+<!--<network connections='1'>-->
+<!--    <name>node-network</name>-->
+<!--    <forward mode="bridge">-->
+<!--        <interface dev="eth0"/>-->
+<!--    </forward>-->
+<!--    <bridge name='virbr1' stp='on' delay='0'/>-->
+<!--    <ip address='10.0.10.1' netmask='255.255.255.0'>-->
+<!--        <dhcp>-->
+<!--            <range start='10.0.10.2' end='10.0.10.254'/>-->
+<!--        </dhcp>-->
+<!--    </ip>-->
+<!--</network>-->
+
+
+<!--<network>-->
+<!--    <name>node-network</name>-->
+<!--    <bridge name="virbr1" />-->
+<!--    <forward mode="nat"/>-->
+<!--    <ip address='10.0.10.1' netmask='255.255.255.0'>-->
+<!--        <dhcp>-->
+<!--            <range start='10.0.10.2' end='10.0.10.254'/>-->
+<!--        </dhcp>-->
+<!--    </ip>-->
+<!--</network>-->
+
+<!--<network>-->
+<!--    <name>node-network</name>-->
+<!--    <bridge name="virbr1" />-->
+<!--    <forward mode="route" dev="wlan0"/>-->
+<!--    <ip address='10.0.10.1' netmask='255.255.255.0'>-->
+<!--        <dhcp>-->
+<!--            <range start='10.0.10.2' end='10.0.10.254'/>-->
+<!--        </dhcp>-->
+<!--    </ip>-->
+<!--</network>-->
+
+<!--https://doc.opensuse.org/documentation/leap/virtualization/single-html/book.virt/index.html-->
+<network>
     <name>node-network</name>
     <forward mode="bridge">
-        <interface dev="eth0"/>
+        <interface dev="wlan0"/>
     </forward>
-    <bridge name='virbr1' stp='on' delay='0'/>
-    <ip address='10.0.10.1' netmask='255.255.255.0'>
-        <dhcp>
-            <range start='10.0.10.2' end='10.0.10.254'/>
-        </dhcp>
-    </ip>
+    <bridge name="virbr1"/>
 </network>
